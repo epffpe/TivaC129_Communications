@@ -178,12 +178,16 @@ int main(void)
     Board_initGeneral();
     Board_initGPIO();
     Board_initEMAC();
+    Board_initUART();
 
     System_printf("Starting the TCP Echo example\nSystem provider is set to "
                   "SysMin. Halt the target to view any SysMin contents in"
                   " ROV.\n");
     /* SysMin will only print to the console when you call flush or exit */
     System_flush();
+
+    initTTY();
+
 
     /* Start BIOS */
     BIOS_start();

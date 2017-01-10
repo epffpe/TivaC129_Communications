@@ -26,8 +26,8 @@
 #define ANSI_COLOR_CYAN    "\x1b[36m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
-Task_Struct task1Struct;
-Char task1Stack[2048];
+Task_Struct taskTTYStruct;
+Char taskTTYStack[2048];
 
 
 const char prompt[] = "\r" ANSI_COLOR_GREEN "epenate@ALTOAviation: > " ANSI_COLOR_RESET;
@@ -138,8 +138,8 @@ void initTTY(void){
 	Task_Params_init(&task1Params);
 	task1Params.arg0 = 1000;
 	task1Params.stackSize = 2048;
-	task1Params.stack = &task1Stack;
-	Task_construct(&task1Struct, (Task_FuncPtr)ttyFxn, &task1Params, NULL);
+	task1Params.stack = &taskTTYStack;
+	Task_construct(&taskTTYStruct, (Task_FuncPtr)ttyFxn, &task1Params, NULL);
 }
 
 

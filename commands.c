@@ -11,11 +11,11 @@
 #include "inc/hw_types.h"
 #include "utils/ustdlib.h"
 
-extern volatile bool g_bStart;
-extern volatile unsigned int g_ui32counter;
-extern volatile unsigned int g_ui32button;
-extern volatile unsigned int g_ui32errorLow;
-extern volatile unsigned int g_ui32errorHigh;
+//extern volatile bool g_bStart;
+//extern volatile unsigned int g_ui32counter;
+//extern volatile unsigned int g_ui32button;
+//extern volatile unsigned int g_ui32errorLow;
+//extern volatile unsigned int g_ui32errorHigh;
 
 //*****************************************************************************
 //
@@ -143,7 +143,7 @@ CMD_start(UART_Handle uart, int argc, char **argv)
 
 	n = sprintf(buff, "\r Button tester sequence started\n\r");
 	UART_write(uart, buff, n);
-	g_bStart = true;
+//	g_bStart = true;
 	return (0);
 }
 
@@ -163,7 +163,7 @@ CMD_stop(UART_Handle uart, int argc, char **argv)
 
 	n = sprintf(buff, "\r Button tester sequence stopped\n\r");
 	UART_write(uart, buff, n);
-	g_bStart = false;
+//	g_bStart = false;
 	return (0);
 }
 
@@ -196,8 +196,8 @@ CMD_stat(UART_Handle uart, int argc, char **argv)
 				return (0);
 			}
 		}
-		n = sprintf(buff, "\r Counter: \x1b[36m%d\x1b[0m, buttons: \x1b[32m%d\x1b[0m, errorLow: \x1b[31;1m%d\x1b[0m, errorHigh: \x1b[31;1m%d\x1b[0m ", g_ui32counter, g_ui32button, g_ui32errorLow, g_ui32errorHigh);
-		UART_write(uart, buff, n);
+//		n = sprintf(buff, "\r Counter: \x1b[36m%d\x1b[0m, buttons: \x1b[32m%d\x1b[0m, errorLow: \x1b[31;1m%d\x1b[0m, errorHigh: \x1b[31;1m%d\x1b[0m ", g_ui32counter, g_ui32button, g_ui32errorLow, g_ui32errorHigh);
+//		UART_write(uart, buff, n);
 		Task_sleep(100);
 	}
 
@@ -247,10 +247,10 @@ CMD_eeprom(UART_Handle uart, int argc, char **argv)
     	pui32Data[1] = 0;
     	pui32Data[2] = 0;
     	pui32Data[3] = 0;
-    	g_ui32counter = 0;
-		g_ui32button = 0;
-		g_ui32errorLow = 0;
-		g_ui32errorHigh = 0;
+//    	g_ui32counter = 0;
+//    	g_ui32button = 0;
+//    	g_ui32errorLow = 0;
+//    	g_ui32errorHigh = 0;
     	EEPROMProgram(pui32Data, 0x000, sizeof(pui32Data));
     	EEPROMRead(pui32Data, 0x000, sizeof(pui32Data));
     	n = sprintf(buff, "\r Counter: \x1b[36m%d\x1b[0m, buttons: \x1b[32m%d\x1b[0m, errorLow: \x1b[31;1m%d\x1b[0m, errorHigh: \x1b[31;1m%d\x1b[0m ", pui32Data[0], pui32Data[1], pui32Data[2], pui32Data[3]);
