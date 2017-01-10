@@ -34,19 +34,19 @@
  *    ======== tcpEcho.c ========
  *    Contains BSD sockets code.
  */
-
-#include <string.h>
-
-#include <xdc/std.h>
-#include <xdc/runtime/Error.h>
-#include <xdc/runtime/System.h>
-
-#include <ti/sysbios/BIOS.h>
-#include <ti/sysbios/knl/Task.h>
-#include <ti/drivers/GPIO.h>
-
-/* NDK BSD support */
-#include <sys/socket.h>
+#include "includes.h"
+//#include <string.h>
+//
+//#include <xdc/std.h>
+//#include <xdc/runtime/Error.h>
+//#include <xdc/runtime/System.h>
+//
+//#include <ti/sysbios/BIOS.h>
+//#include <ti/sysbios/knl/Task.h>
+//#include <ti/drivers/GPIO.h>
+//
+///* NDK BSD support */
+//#include <sys/socket.h>
 
 /* Example/Board Header file */
 #include "Board.h"
