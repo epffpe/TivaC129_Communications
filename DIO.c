@@ -229,6 +229,7 @@ static void DIUpdate(void) {
                 break;
             }
         }
+        pdi++;
     }
 }
 
@@ -260,6 +261,17 @@ void DIOInit(void)
         pdi->DITrigFnct     = (void *)0;
         pdi->DITrigFnctArg  = (void *)0;
 #endif
+        pdi->DIDebounceEn   = false;
+        pdi->DIDownTmr      = 0;
+        pdi->DIDebounceDly  = 3;
+        pdi->DIDebounceDlyCtr = 0;
+        pdi->DIRptDlyCtr    = 0;
+        pdi->DIRptStartDlyCtr = 0;
+        pdi->DIRptDly       = 10;
+        pdi->DIRptStartDly  = 50;
+        pdi->DIScanState    = KEY_STATE_UP;
+        pdi->DIDebFnct      = (void *)0;
+        pdi->DIDebFnctArg   = (void *)0;
         pdi++;
     }
     pdo = &DOTbl[0];
@@ -617,6 +629,62 @@ void DIOInitIO (void)
 
 }
 
+
+/*
+ *
+ *  PHYSICAL INTERFACE
+ *
+ */
+const DIO_MAP DIMapTbl[DIO_MAX_DI] =
+{
+ Board_BUTTON0,
+ Board_BUTTON1,
+ NULL,
+ NULL,
+ NULL,
+ NULL,
+ NULL,
+ NULL
+};
+
+const DIO_MAP DOMapTbl[DIO_MAX_DO] =
+{
+ Board_LED0,
+ Board_LED1,
+ Board_LED2,
+ NULL,
+ NULL,
+ NULL,
+ NULL,
+ NULL
+};
+
+
+/*
+ *
+ *  SEE IF KEY PRESSED
+ *  returns
+ *      true if a key is pressed
+ *      false if a key is not preset
+ *
+ */
+
+static bool DIIsKeyDown(uint8_t n)
+{
+    unsigned int pinVal;
+    bool val;
+    val = false;
+    if (n < DIO_MAX_DI) {
+        pinVal = GPIO_read(DIMapTbl[n].DIOPinMap);
+        val = (bool)(pinVal ? 0 : 1);
+        if (val) {
+            DITbl[n].DIDownTmr++;
+        }
+    }
+    return val;
+}
+
+
 /*
  *
  *  READ PHYSICAL INPUTS
@@ -628,16 +696,75 @@ void DIRd(void)
 {
     DIO_DI *pdi;
     uint8_t i;
-    uint8_t in;
-    uint8_t msk;
+    unsigned int in;
 
-    pdi = &DITbl[0];
-    msk = 0x01;
-    in = 0x0;
-    for (i = 0; i < 8; i++) {
-        pdi->DIIn = (bool) (in & msk) ? 1 : 0;
-        msk <<= 1;
-        pdi++;
+    for (i = 0; i < DIO_MAX_DI; i++) {
+        pdi = &DITbl[i];
+        if (pdi->DIDebounceEn) {
+            switch(pdi->DIScanState) {
+            case KEY_STATE_UP:
+                pdi->DIIn = false;
+                if (DIIsKeyDown(i)) {
+                    pdi->DIScanState = KEY_STATE_DEBOUNCE;
+                    pdi->DIDownTmr = 0;
+                    pdi->DIDebounceDlyCtr = pdi->DIDebounceDly;
+                }
+                break;
+            case KEY_STATE_DEBOUNCE:
+                if (DIIsKeyDown(i)) {
+                    if (pdi->DIDebounceDlyCtr > 0) {
+                        pdi->DIDebounceDlyCtr--;
+                        if (pdi->DIDebounceDlyCtr == 0){
+                            pdi->DIIn = true;
+                            if (pdi->DIDebFnct != NULL) {
+                                (*pdi->DIDebFnct)(pdi->DIDebFnctArg);
+                            }
+                            pdi->DIRptStartDlyCtr = pdi->DIRptStartDly;
+                            pdi->DIScanState = KEY_STATE_RPT_START_DLY;
+                        }
+                    }
+                } else {
+                    pdi->DIScanState = KEY_STATE_UP;
+                }
+                break;
+            case KEY_STATE_RPT_START_DLY:
+                if (DIIsKeyDown(i)) {
+                    if (pdi->DIRptStartDlyCtr > 0) {
+                        pdi->DIRptStartDlyCtr--;
+                        if (pdi->DIRptStartDlyCtr == 0) {
+                            pdi->DIIn = true;
+                            if (pdi->DIDebFnct != NULL) {
+                                (*pdi->DIDebFnct)(pdi->DIDebFnctArg);
+                            }
+                            pdi->DIRptDlyCtr = pdi->DIRptDly;
+                            pdi->DIScanState = KEY_STATE_RPT_DLY;
+                        }
+                    }
+                } else {
+                    pdi->DIScanState = KEY_STATE_DEBOUNCE;
+                }
+                break;
+            case KEY_STATE_RPT_DLY:
+                if (DIIsKeyDown(i)) {
+                    if (pdi->DIRptDlyCtr > 0) {
+                        pdi->DIRptDlyCtr--;
+                        if (pdi->DIRptDlyCtr == 0) {
+                            pdi->DIIn = true;
+                            if (pdi->DIDebFnct != NULL) {
+                                (*pdi->DIDebFnct)(pdi->DIDebFnctArg);
+                            }
+                            pdi->DIRptDlyCtr = pdi->DIRptDly;
+                        }
+                    }
+                } else {
+                    pdi->DIScanState = KEY_STATE_DEBOUNCE;
+                }
+                break;
+            }
+        } else {
+            in = GPIO_read(DIMapTbl[i].DIOPinMap);
+            pdi->DIIn = (bool) (in ? 0 : 1);
+        }
     }
 }
 
@@ -651,19 +778,10 @@ void DOWr(void)
 {
     DIO_DO *pdo;
     uint8_t i;
-    uint8_t out;
-    uint8_t msk;
 
-    pdo = &DOTbl[0];
-    msk = 0x01;
-    out = 0x00;
-    for (i = 0; i<8; i++){
-        if (pdo->DOOut == true) {
-            out |= msk;
-        }
-        msk <<= 1;
-        pdo++;
+    for (i = 0; i<DIO_MAX_DO; i++){
+        pdo = &DOTbl[i];
+        GPIO_write(DOMapTbl[i].DIOPinMap, pdo->DOOut);
     }
-    //write to output
 }
 #endif

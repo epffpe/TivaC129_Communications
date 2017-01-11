@@ -256,7 +256,7 @@ void EK_TM4C1294XL_initEMAC(void)
              macAddress[4] == 0xff && macAddress[5] == 0xff) {
         System_abort("Change the macAddress variable to match your boards MAC sticker");
     }
-
+    System_flush();
     GPIOPinConfigure(GPIO_PF0_EN0LED0);  /* EK_TM4C1294XL_USR_D3 */
     GPIOPinConfigure(GPIO_PF4_EN0LED1);  /* EK_TM4C1294XL_USR_D4 */
     GPIOPinTypeEthernetLED(GPIO_PORTF_BASE, GPIO_PIN_0 | GPIO_PIN_4);

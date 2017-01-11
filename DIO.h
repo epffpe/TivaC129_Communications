@@ -15,9 +15,9 @@
 
 #ifndef CFG_H
 
-#define DIO_TASK_PRIO           40
-#define DIO_TASK_DLY_TICKS      1
-#define DIO_TASK_STK_SIZE       512
+#define DIO_TASK_PRIO           10
+#define DIO_TASK_DLY_TICKS      10
+#define DIO_TASK_STK_SIZE       1024
 
 #define DIO_MAX_DI              8
 #define DIO_MAX_DO              8
@@ -80,6 +80,13 @@
  * DATA TYPES
  *
  */
+typedef enum {
+    KEY_STATE_UP,
+    KEY_STATE_DEBOUNCE,
+    KEY_STATE_RPT_START_DLY,
+    KEY_STATE_RPT_DLY
+} DIO_DEBOUNCE_STATE;
+
 
 typedef struct dio_di {                   /* DISCRETE INPUT CHANNEL DATA STRUCTURE */
     bool        DIIn;                     /* Current state of sensor input */
@@ -91,6 +98,20 @@ typedef struct dio_di {                   /* DISCRETE INPUT CHANNEL DATA STRUCTU
     void        (*DITrigFnct)(void *);    /* Function to execute if edge triggered */
     void        *DITrigFnctArg;           /* arguments passed to function when edge detected */
 #endif
+                                          /* DEBOUNCE PARAMETERS */
+    bool        DIDebounceEn;
+    uint32_t    DIDownTmr;
+    uint32_t    DIDebounceDlyCtr;
+    uint32_t    DIDebounceDly;
+    uint32_t    DIRptStartDlyCtr;
+    uint32_t    DIRptStartDly;
+    uint32_t    DIRptDlyCtr;
+    uint32_t    DIRptDly;
+    DIO_DEBOUNCE_STATE DIScanState;
+    void        (*DIDebFnct)(void *);    /* Function to execute if edge triggered */
+    void        *DIDebFnctArg;           /* arguments passed to function when edge detected */
+
+
 }DIO_DI;
 
 typedef struct dio_do {
@@ -108,6 +129,13 @@ typedef struct dio_do {
 #endif
 }DIO_DO;
 
+typedef struct dio_di_map {
+    unsigned int     DIOPinMap;
+}DIO_MAP;
+
+
+
+
 /*
  *
  * GLOBAL VARIABLES
@@ -116,6 +144,8 @@ typedef struct dio_do {
 
 DIO_EXT DIO_DI      DITbl[DIO_MAX_DI];
 DIO_EXT DIO_DO      DOTbl[DIO_MAX_DO];
+
+
 
 /*
  *

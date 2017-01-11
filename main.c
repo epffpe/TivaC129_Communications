@@ -187,6 +187,7 @@ int main(void)
     System_flush();
 
     initTTY();
+    DIOInit();
 
 
     /* Start BIOS */
