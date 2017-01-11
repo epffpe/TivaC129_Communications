@@ -144,6 +144,7 @@ CMD_start(UART_Handle uart, int argc, char **argv)
 	n = sprintf(buff, "\r Button tester sequence started\n\r");
 	UART_write(uart, buff, n);
 //	g_bStart = true;
+	DOSet(0, true);
 	return (0);
 }
 
@@ -164,6 +165,7 @@ CMD_stop(UART_Handle uart, int argc, char **argv)
 	n = sprintf(buff, "\r Button tester sequence stopped\n\r");
 	UART_write(uart, buff, n);
 //	g_bStart = false;
+	DOSet(0, false);
 	return (0);
 }
 
@@ -180,7 +182,9 @@ CMD_stat(UART_Handle uart, int argc, char **argv)
 	int n;
 	char buff[128];
 	bool exit = false, dataAvailable;
+	uint32_t in0, in1, led0, led1;
 	(void)uart;
+
 
 	n = sprintf(buff, "\r Press \"\x1b[32;1mq\x1b[0m\" to exit\n\r");
 	UART_write(uart, buff, n);
@@ -196,8 +200,12 @@ CMD_stat(UART_Handle uart, int argc, char **argv)
 				return (0);
 			}
 		}
-//		n = sprintf(buff, "\r Counter: \x1b[36m%d\x1b[0m, buttons: \x1b[32m%d\x1b[0m, errorLow: \x1b[31;1m%d\x1b[0m, errorHigh: \x1b[31;1m%d\x1b[0m ", g_ui32counter, g_ui32button, g_ui32errorLow, g_ui32errorHigh);
-//		UART_write(uart, buff, n);
+		in0 = DIGet(0);
+		in1 = DIGet(1);
+		led0 = DOGet(0);
+		led1 = DOGet(1);
+		n = sprintf(buff, "\r In0: \x1b[36m%d\x1b[0m, In1: \x1b[32m%d\x1b[0m, LED0: \x1b[36m%d\x1b[0m, LED1: \x1b[32m%d\x1b[0m   ", in0, in1, led0, led1);
+		UART_write(uart, buff, n);
 		Task_sleep(100);
 	}
 
@@ -268,6 +276,169 @@ CMD_eeprom(UART_Handle uart, int argc, char **argv)
 
 //*****************************************************************************
 //
+// Command: DIO
+//
+// Clear the terminal screen.
+//
+//*****************************************************************************
+
+
+int
+CMD_DICfgMode(UART_Handle uart, int argc, char **argv)
+{
+    int n;
+    unsigned long index, mode;
+    char buff[64];
+    (void)uart;
+    const char *ptr;
+
+    if((argc == 1)||(argc == 2))
+    {
+        return(CMDLINE_TOO_FEW_ARGS);
+    }
+    if(argc > 3)
+    {
+        return(CMDLINE_TOO_MANY_ARGS);
+    }
+
+    index = ustrtoul(argv[1], NULL, 0);
+    mode = ustrtoul(argv[2], NULL, 0);
+
+    switch(mode){
+    case DI_MODE_LOW:
+        ptr = "DI_MODE_LOW";
+        break;
+    case DI_MODE_HIGH:
+        ptr = "DI_MODE_HIGH";
+        break;
+    case DI_MODE_DIRECT:
+        ptr = "DI_MODE_DIRECT";
+        break;
+    case DI_MODE_INV:
+        ptr = "DI_MODE_INV";
+        break;
+    case DI_MODE_EDGE_LOW_GOING:
+        ptr = "DI_MODE_EDGE_LOW_GOING";
+        break;
+    case DI_MODE_EDGE_HIGH_GOING:
+        ptr = "DI_MODE_EDGE_HIGH_GOING";
+        break;
+    case DI_MODE_EDGE_BOTH:
+        ptr = "DI_MODE_EDGE_BOTH";
+        break;
+    case DI_MODE_TOGGLE_LOW_GOING:
+        ptr = "DI_MODE_TOGGLE_LOW_GOING";
+        break;
+    case DI_MODE_TOGGLE_HIGH_GOING:
+        ptr = "DI_MODE_TOGGLE_HIGH_GOING";
+        break;
+    default:
+        ptr = "error";
+        break;
+    }
+
+    DICfgMode (index, mode);
+    n = sprintf(buff, "\r Input %d configured as %s\n\r", index, ptr);
+    UART_write(uart, buff, n);
+    return (0);
+}
+
+
+int
+CMD_cnfgOut(UART_Handle uart, int argc, char **argv)
+{
+    int n;
+    char buff[64];
+    (void)uart;
+
+
+//  g_bStart = false;
+    DOCfgMode (0, DO_MODE_BLINK_ASYNC, false);
+    DOCfgBlink (0, DO_BLINK_EN_NORMAL, 500, 1000);
+    n = sprintf(buff, "\r Output 0 is configured to blink D=500ms T=1000\n\r");
+    UART_write(uart, buff, n);
+    return (0);
+}
+
+int
+CMD_DOCfgMode(UART_Handle uart, int argc, char **argv)
+{
+    int n;
+    unsigned long index, mode,ulinv;
+    bool binv;
+    char buff[64];
+    (void)uart;
+    const char *ptr;
+
+    if((argc == 1)||(argc == 2))
+    {
+        return(CMDLINE_TOO_FEW_ARGS);
+    }
+    if(argc > 4)
+    {
+        return(CMDLINE_TOO_MANY_ARGS);
+    }
+
+    index = ustrtoul(argv[1], NULL, 0);
+    mode = ustrtoul(argv[2], NULL, 0);
+    ulinv = ustrtoul(argv[3], NULL, 0);
+    binv = ulinv ? true:false;
+
+    switch(mode){
+    case DO_MODE_LOW:
+        ptr = "DO_MODE_LOW";
+        break;
+    case DO_MODE_HIGH:
+        ptr = "DO_MODE_HIGH";
+        break;
+    case DO_MODE_DIRECT:
+        ptr = "DO_MODE_DIRECT";
+        break;
+    case DO_MODE_BLINK_SYNC:
+        ptr = "DO_MODE_BLINK_SYNC";
+        break;
+    case DO_MODE_BLINK_ASYNC:
+        ptr = "DO_MODE_BLINK_SYNC";
+        break;
+    default:
+        ptr = "error";
+        break;
+    }
+
+    DOCfgMode (index, mode, binv);
+    n = sprintf(buff, "\r Output %d configured as %s %s\n\r", index, ptr, binv ? "inverted":"not inverted");
+    UART_write(uart, buff, n);
+    return (0);
+}
+
+int
+CMD_DOGet(UART_Handle uart, int argc, char **argv)
+{
+    int n;
+    unsigned long ulindex;
+    bool bval;
+    char buff[32];
+    (void)uart;
+
+    if(argc == 1)
+    {
+        return(CMDLINE_TOO_FEW_ARGS);
+    }
+    if(argc > 2)
+    {
+        return(CMDLINE_TOO_MANY_ARGS);
+    }
+
+    ulindex = ustrtoul(argv[1], NULL, 0);
+    bval = DOGet(ulindex);
+
+    n = sprintf(buff, "\r Output %d value: %s\n\r", ulindex, bval ? "true":"false");
+    UART_write(uart, buff, n);
+    return (0);
+}
+
+//*****************************************************************************
+//
 // Table of valid command strings, callback functions and help messages.  This
 // is used by the cmdline module.
 //
@@ -285,6 +456,12 @@ tCmdLineEntry g_psCmdTable[] =
 	{"stop",   CMD_stop,   " : Stop test"},
 	{"status",   CMD_stat,   " : Show status"},
 	{"eeprom",   CMD_eeprom, " : eeprom read, eeprom reset"},
+
+	{"DICfgMode",  CMD_DICfgMode, " : configure LED0 to blink"},
+
+	{"config",  CMD_cnfgOut, " : configure LED0 to blink"},
+    {"DOCfgMode",  CMD_DOCfgMode, " : Configure output mode selector"},
+    {"DOGet",  CMD_DOGet, " : Read output value .DOOut for output n"},
     { 0, 0, 0 }
 };
 

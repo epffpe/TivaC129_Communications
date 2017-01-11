@@ -19,8 +19,8 @@
 #define DIO_TASK_DLY_TICKS      10
 #define DIO_TASK_STK_SIZE       1024
 
-#define DIO_MAX_DI              8
-#define DIO_MAX_DO              8
+#define DIO_MAX_DI              2
+#define DIO_MAX_DO              2
 
 #define DI_EDGE_EN              1
 
@@ -107,7 +107,7 @@ typedef struct dio_di {                   /* DISCRETE INPUT CHANNEL DATA STRUCTU
     uint32_t    DIRptStartDly;
     uint32_t    DIRptDlyCtr;
     uint32_t    DIRptDly;
-    DIO_DEBOUNCE_STATE DIScanState;
+    uint32_t    DIScanState;
     void        (*DIDebFnct)(void *);    /* Function to execute if edge triggered */
     void        *DIDebFnctArg;           /* arguments passed to function when edge detected */
 
@@ -149,14 +149,34 @@ DIO_EXT DIO_DO      DOTbl[DIO_MAX_DO];
 
 /*
  *
- * FUNCTION PROTOTYPES
+ * FUNCTION PROTOTYPES API
  *
  */
 
 void DIOInit(void);
-//
-void DICfgMode(uint8_t n, uint8_t mode);
-//
+
+void        DICfgMode(uint8_t n, uint8_t mode);
+uint32_t    DIGet(uint8_t n);
+void        DISetBypassEn (uint8_t n, bool state);
+void        DISetBypass(uint8_t n, uint32_t val);
+
+#if         DI_EDGE_EN
+void        DIClr(uint8_t n);
+void        DICfgEdgeDetectFnct(uint8_t n, void (*fnct)(void *), void *arg);
+#endif
+
+void        DOCfgMode (uint8_t n, uint8_t mode, bool inv);
+bool        DOGet (uint8_t n);
+void        DOSet (uint8_t n, bool state);
+void        DOSetBypassEn (uint8_t n, bool state);
+void        DOSetBypass (uint8_t n, bool state);
+
+#if         DO_BLINK_MODE_EN
+void        DOCfgBlink (uint8_t n, uint8_t mode, uint32_t a, uint32_t b);
+void        DOSetSyncCtrMax(uint32_t val);
+#endif
+
+
 #endif /* DIO_H_ */
 
 

@@ -42,6 +42,7 @@
 #include "utils/uartstdio.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/eeprom.h"
+#include "driverlib/interrupt.h"
 #include "cmdline.h"
 #include "tty.h"
 #include "commands.h"
@@ -62,6 +63,8 @@
  */
 #define OS_ENTER_CRITICAL() _disable_IRQ()
 #define OS_EXIT_CRITICAL()  _enable_IRQ()
+//#define OS_ENTER_CRITICAL() IntMasterDisable()
+//#define OS_EXIT_CRITICAL()  IntMasterEnable()
 
 //#define os_enter_critical() __disable_irq() // PRIMARIMASK -> CPSID I
 //                                                                                        // __disable_fiq(); // FAULTMASK -> CPSID F

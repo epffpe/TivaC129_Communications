@@ -186,6 +186,8 @@ int main(void)
     /* SysMin will only print to the console when you call flush or exit */
     System_flush();
 
+//    GPIO_write(Board_LED0, 1);
+//    GPIO_write(Board_LED1, 1);
     initTTY();
     DIOInit();
 

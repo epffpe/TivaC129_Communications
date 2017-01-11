@@ -122,7 +122,7 @@ void DIClr(uint8_t n)
  *
  */
 
-uint32_t IDGet(uint8_t n)
+uint32_t DIGet(uint8_t n)
 {
     uint32_t val;
 
@@ -150,17 +150,17 @@ static void DIIsTrig(DIO_DI *pdi)
 
     trig = false;
     switch (pdi->DIModeSel) {
-    case DI_EDGE_LOW_GOING:
+    case DI_MODE_EDGE_LOW_GOING:
         if (pdi->DIPrev == 1 && pdi->DIIn == 0) {
             trig = true;
         }
         break;
-    case DI_EDGE_HIGH_GOING:
+    case DI_MODE_EDGE_HIGH_GOING:
         if (pdi->DIPrev == 0 && pdi->DIIn == 1) {
             trig = true;
         }
         break;
-    case DI_EDGE_BOTH:
+    case DI_MODE_EDGE_BOTH:
         if (    (pdi->DIPrev == 0 && pdi->DIIn == 1) ||
                 (pdi->DIPrev == 1 && pdi->DIIn == 0) ) {
             trig = true;
@@ -369,6 +369,7 @@ void DISetBypassEn (uint8_t n, bool state)
         OS_EXIT_CRITICAL();
     }
 }
+
 
 /*
  *
@@ -638,25 +639,13 @@ void DIOInitIO (void)
 const DIO_MAP DIMapTbl[DIO_MAX_DI] =
 {
  Board_BUTTON0,
- Board_BUTTON1,
- NULL,
- NULL,
- NULL,
- NULL,
- NULL,
- NULL
+ Board_BUTTON1
 };
 
 const DIO_MAP DOMapTbl[DIO_MAX_DO] =
 {
  Board_LED0,
- Board_LED1,
- Board_LED2,
- NULL,
- NULL,
- NULL,
- NULL,
- NULL
+ Board_LED1
 };
 
 
