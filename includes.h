@@ -51,10 +51,24 @@
 
 #include "tty.h"
 #include "ttybin.h"
+#include "dio.h"
 
 
+/*
+ *
+ * http://www.ti.com/lit/ug/spnu151n/spnu151n.pdf
+ * PAG 155
+ *
+ */
+#define OS_ENTER_CRITICAL() _disable_IRQ()
+#define OS_EXIT_CRITICAL()  _enable_IRQ()
 
-
+//#define os_enter_critical() __disable_irq() // PRIMARIMASK -> CPSID I
+//                                                                                        // __disable_fiq(); // FAULTMASK -> CPSID F
+//                                                                                        //          __set_BASEPRI(30);
+//#define os_exit_critical()  __enable_irq()  // PRIMARIMASK -> CPSIE I
+//                                                                                        // __enable_fiq();  // FAULTMASK -> CPSID F
+//                                                                                        // __set_BASEPRI(0);
 
 #ifdef __cplusplus
 extern "C"  {
