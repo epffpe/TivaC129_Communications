@@ -134,7 +134,10 @@ typedef struct dio_di_map {
 }DIO_MAP;
 
 
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 /*
  *
@@ -176,6 +179,9 @@ void        DOCfgBlink (uint8_t n, uint8_t mode, uint32_t a, uint32_t b);
 void        DOSetSyncCtrMax(uint32_t val);
 #endif
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* DIO_H_ */
 
