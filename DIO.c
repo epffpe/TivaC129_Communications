@@ -546,7 +546,7 @@ void DOSetBypassEn (uint8_t n, bool state)
 void DOSetSyncCtrMax(uint32_t val)
 {
     OS_ENTER_CRITICAL();
-    DOSyncCtrMax = val;
+    DOSyncCtrMax = val / DIO_TASK_DLY_TICKS;
     OS_EXIT_CRITICAL();
 }
 #endif
@@ -692,7 +692,7 @@ void DIRd(void)
         if (pdi->DIDebounceEn) {
             switch(pdi->DIScanState) {
             case KEY_STATE_UP:
-                pdi->DIIn = false;
+                pdi->DIIn = 1;
                 if (DIIsKeyDown(i)) {
                     pdi->DIScanState = KEY_STATE_DEBOUNCE;
                     pdi->DIDownTmr = 0;
@@ -704,7 +704,7 @@ void DIRd(void)
                     if (pdi->DIDebounceDlyCtr > 0) {
                         pdi->DIDebounceDlyCtr--;
                         if (pdi->DIDebounceDlyCtr == 0){
-                            pdi->DIIn = true;
+                            pdi->DIIn = 0;
                             if (pdi->DIDebFnct != NULL) {
                                 (*pdi->DIDebFnct)(pdi->DIDebFnctArg);
                             }
@@ -721,7 +721,7 @@ void DIRd(void)
                     if (pdi->DIRptStartDlyCtr > 0) {
                         pdi->DIRptStartDlyCtr--;
                         if (pdi->DIRptStartDlyCtr == 0) {
-                            pdi->DIIn = true;
+                            pdi->DIIn = 0;
                             if (pdi->DIDebFnct != NULL) {
                                 (*pdi->DIDebFnct)(pdi->DIDebFnctArg);
                             }
@@ -738,7 +738,7 @@ void DIRd(void)
                     if (pdi->DIRptDlyCtr > 0) {
                         pdi->DIRptDlyCtr--;
                         if (pdi->DIRptDlyCtr == 0) {
-                            pdi->DIIn = true;
+                            pdi->DIIn = 0;
                             if (pdi->DIDebFnct != NULL) {
                                 (*pdi->DIDebFnct)(pdi->DIDebFnctArg);
                             }
@@ -752,7 +752,7 @@ void DIRd(void)
             }
         } else {
             in = GPIO_read(DIMapTbl[i].DIOPinMap);
-            pdi->DIIn = (bool) (in ? 0 : 1);
+            pdi->DIIn = (bool) (in ? 1 : 0);
         }
     }
 }

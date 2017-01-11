@@ -345,6 +345,91 @@ CMD_DICfgMode(UART_Handle uart, int argc, char **argv)
 
 
 int
+CMD_DISetBypassEn(UART_Handle uart, int argc, char **argv)
+{
+    int n;
+    unsigned long index, mode;
+    char buff[64];
+    (void)uart;
+
+    if((argc == 1)||(argc == 2))
+    {
+        return(CMDLINE_TOO_FEW_ARGS);
+    }
+    if(argc > 3)
+    {
+        return(CMDLINE_TOO_MANY_ARGS);
+    }
+
+    index = ustrtoul(argv[1], NULL, 0);
+    mode = ustrtoul(argv[2], NULL, 0);
+
+
+    DISetBypassEn (index, mode);
+    n = sprintf(buff, "\r Input %d bypassed: %s\n\r", index, mode ? "true":"false");
+    UART_write(uart, buff, n);
+    return (0);
+}
+
+
+int
+CMD_DISetBypass(UART_Handle uart, int argc, char **argv)
+{
+    int n;
+    unsigned long index, mode;
+    char buff[64];
+    (void)uart;
+
+    if((argc == 1)||(argc == 2))
+    {
+        return(CMDLINE_TOO_FEW_ARGS);
+    }
+    if(argc > 3)
+    {
+        return(CMDLINE_TOO_MANY_ARGS);
+    }
+
+    index = ustrtoul(argv[1], NULL, 0);
+    mode = ustrtoul(argv[2], NULL, 0);
+
+
+    DISetBypass (index, mode);
+    n = sprintf(buff, "\r Input %d bypassed: %s\n\r", index, mode ? "true":"false");
+    UART_write(uart, buff, n);
+    return (0);
+}
+
+#ifdef DI_EDGE_EN
+
+int
+CMD_DIClr(UART_Handle uart, int argc, char **argv)
+{
+    int n;
+    unsigned long ulindex;
+    char buff[32];
+    (void)uart;
+
+    if(argc == 1)
+    {
+        return(CMDLINE_TOO_FEW_ARGS);
+    }
+    if(argc > 2)
+    {
+        return(CMDLINE_TOO_MANY_ARGS);
+    }
+
+    ulindex = ustrtoul(argv[1], NULL, 0);
+    DIClr(ulindex);
+
+    n = sprintf(buff, "\r Input %d set to 0\n\r", ulindex);
+    UART_write(uart, buff, n);
+    return (0);
+}
+
+
+#endif
+
+int
 CMD_cnfgOut(UART_Handle uart, int argc, char **argv)
 {
     int n;
@@ -370,7 +455,7 @@ CMD_DOCfgMode(UART_Handle uart, int argc, char **argv)
     (void)uart;
     const char *ptr;
 
-    if((argc == 1)||(argc == 2))
+    if(argc < 4)
     {
         return(CMDLINE_TOO_FEW_ARGS);
     }
@@ -398,7 +483,7 @@ CMD_DOCfgMode(UART_Handle uart, int argc, char **argv)
         ptr = "DO_MODE_BLINK_SYNC";
         break;
     case DO_MODE_BLINK_ASYNC:
-        ptr = "DO_MODE_BLINK_SYNC";
+        ptr = "DO_MODE_BLINK_ASYNC";
         break;
     default:
         ptr = "error";
@@ -437,6 +522,164 @@ CMD_DOGet(UART_Handle uart, int argc, char **argv)
     return (0);
 }
 
+
+
+int
+CMD_DOSet(UART_Handle uart, int argc, char **argv)
+{
+    int n;
+    unsigned long index, mode;
+    char buff[64];
+    (void)uart;
+
+    if((argc == 1)||(argc == 2))
+    {
+        return(CMDLINE_TOO_FEW_ARGS);
+    }
+    if(argc > 3)
+    {
+        return(CMDLINE_TOO_MANY_ARGS);
+    }
+
+    index = ustrtoul(argv[1], NULL, 0);
+    mode = ustrtoul(argv[2], NULL, 0);
+
+
+    DOSet (index, mode);
+    n = sprintf(buff, "\r Output %d set to: %c\n\r", index, mode ? '1':'0');
+    UART_write(uart, buff, n);
+    return (0);
+}
+
+
+
+int
+CMD_DOSetBypassEn(UART_Handle uart, int argc, char **argv)
+{
+    int n;
+    unsigned long index, mode;
+    char buff[64];
+    (void)uart;
+
+    if((argc == 1)||(argc == 2))
+    {
+        return(CMDLINE_TOO_FEW_ARGS);
+    }
+    if(argc > 3)
+    {
+        return(CMDLINE_TOO_MANY_ARGS);
+    }
+
+    index = ustrtoul(argv[1], NULL, 0);
+    mode = ustrtoul(argv[2], NULL, 0);
+
+
+    DOSetBypassEn (index, mode);
+    n = sprintf(buff, "\r Output %d bypassed: %s\n\r", index, mode ? "true":"false");
+    UART_write(uart, buff, n);
+    return (0);
+}
+
+
+
+int
+CMD_DOSetBypass(UART_Handle uart, int argc, char **argv)
+{
+    int n;
+    unsigned long index, mode;
+    char buff[64];
+    (void)uart;
+
+    if((argc == 1)||(argc == 2))
+    {
+        return(CMDLINE_TOO_FEW_ARGS);
+    }
+    if(argc > 3)
+    {
+        return(CMDLINE_TOO_MANY_ARGS);
+    }
+
+    index = ustrtoul(argv[1], NULL, 0);
+    mode = ustrtoul(argv[2], NULL, 0);
+
+
+    DOSetBypass (index, mode);
+    n = sprintf(buff, "\r Output %d bypassed value: %s\n\r", index, mode ? "true":"false");
+    UART_write(uart, buff, n);
+    return (0);
+}
+
+#if         DO_BLINK_MODE_EN
+
+int
+CMD_DOCfgBlink(UART_Handle uart, int argc, char **argv)
+{
+    int n;
+    unsigned long index, mode, a, b;
+    char buff[128];
+    (void)uart;
+    const char *ptr;
+
+    if(argc < 5)
+    {
+        return(CMDLINE_TOO_FEW_ARGS);
+    }
+    if(argc > 5)
+    {
+        return(CMDLINE_TOO_MANY_ARGS);
+    }
+
+    index = ustrtoul(argv[1], NULL, 0);
+    mode = ustrtoul(argv[2], NULL, 0);
+    a = ustrtoul(argv[3], NULL, 0);
+    b = ustrtoul(argv[4], NULL, 0);
+
+    DOCfgBlink (index, mode, a, b);
+
+    switch(mode){
+    case DO_BLINK_EN:
+        ptr = "DO_BLINK_EN";
+        break;
+    case DO_BLINK_EN_NORMAL:
+        ptr = "DO_BLINK_EN_NORMAL";
+        break;
+    case DO_BLINK_EN_INV:
+        ptr = "DO_BLINK_EN_INV";
+        break;
+    }
+
+    n = sprintf(buff, "\r Output %d configured as %s with pulse: %d ms and period: %d ms\n\r", index, ptr, a, b);
+    UART_write(uart, buff, n);
+    return (0);
+}
+
+int
+CMD_DOSetSyncCtrMax(UART_Handle uart, int argc, char **argv)
+{
+    int n;
+    unsigned long index;
+    char buff[64];
+    (void)uart;
+
+    if(argc == 1)
+    {
+        return(CMDLINE_TOO_FEW_ARGS);
+    }
+    if(argc > 2)
+    {
+        return(CMDLINE_TOO_MANY_ARGS);
+    }
+
+    index = ustrtoul(argv[1], NULL, 0);
+
+
+    DOSetSyncCtrMax (index);
+    n = sprintf(buff, "\r Synchronous period set to: %d ms\n\r", index);
+    UART_write(uart, buff, n);
+    return (0);
+}
+
+#endif
 //*****************************************************************************
 //
 // Table of valid command strings, callback functions and help messages.  This
@@ -451,17 +694,32 @@ tCmdLineEntry g_psCmdTable[] =
 //    {"time12", CMD_time12, " : Set Time 12HR style \"HH:MM:XX\" "
 //                           "XX = AM or PM"},
 //    {"time24", CMD_time24, " : Set Time 24HR style \"HH:MM\"."},
-    {"cls",    CMD_cls,    " : Clear the terminal screen"},
-	{"start",  CMD_start,  " : Start test"},
-	{"stop",   CMD_stop,   " : Stop test"},
-	{"status",   CMD_stat,   " : Show status"},
-	{"eeprom",   CMD_eeprom, " : eeprom read, eeprom reset"},
+    {"cls",             CMD_cls,            " : Clear the terminal screen"},
+	{"start",  CMD_start,                   " : Start test"},
+	{"stop",   CMD_stop,                    " : Stop test"},
+	{"status",   CMD_stat,                  " : Show status"},
+//	{"eeprom",   CMD_eeprom,                " : eeprom read, eeprom reset"},
 
-	{"DICfgMode",  CMD_DICfgMode, " : configure LED0 to blink"},
+    {"DICfgMode",       CMD_DICfgMode,      " : DICfgMode(uint8_t n, uint8_t mode)"},
+    {"DISetBypassEn",   CMD_DISetBypassEn,  " : DISetBypassEn (uint8_t n, bool state)"},
+    {"DISetBypass",     CMD_DISetBypass,    " : DISetBypass(uint8_t n, uint32_t val)"},
 
-	{"config",  CMD_cnfgOut, " : configure LED0 to blink"},
-    {"DOCfgMode",  CMD_DOCfgMode, " : Configure output mode selector"},
-    {"DOGet",  CMD_DOGet, " : Read output value .DOOut for output n"},
+#if         DI_EDGE_EN
+    {"DIClr",           CMD_DIClr,          " : DIClr(uint8_t n)"},
+#endif
+
+//	{"config",          CMD_cnfgOut,        " : configure LED0 to blink"},
+
+    {"DOCfgMode",       CMD_DOCfgMode,      " : DOCfgMode (uint8_t n, uint8_t mode, bool inv)"},
+    {"DOGet",           CMD_DOGet,          " : DOGet (uint8_t n)"},
+    {"DOSet",           CMD_DOSet,          " : DOSet (uint8_t n, bool state)"},
+    {"DOSetBypassEn",   CMD_DOSetBypassEn,  " : DOSetBypassEn (uint8_t n, bool state);"},
+    {"DOSetBypass",     CMD_DOSetBypass,    " : DOSetBypass (uint8_t n, bool state)"},
+
+#if         DO_BLINK_MODE_EN
+    {"DOCfgBlink",      CMD_DOCfgBlink,     " : DOCfgBlink (uint8_t n, uint8_t mode, uint32_t a, uint32_t b)"},
+    {"DOSetSyncCtrMax", CMD_DOSetSyncCtrMax," : DOSetSyncCtrMax(uint32_t val);"},
+#endif
     { 0, 0, 0 }
 };
 
