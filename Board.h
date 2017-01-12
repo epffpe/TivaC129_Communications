@@ -60,6 +60,13 @@ extern "C" {
 #define Board_BUTTON0               EK_TM4C1294XL_USR_SW1
 #define Board_BUTTON1               EK_TM4C1294XL_USR_SW2
 
+#define MKII_BUTTON1                MKII_USR_S1
+#define MKII_BUTTON2                MKII_USR_S2
+#define MKII_LEDRED                 MKII_DR
+#define MKII_LEDGREEN               MKII_DG
+#define MKII_LEDBLUE                MKII_DB
+#define MKII_BUZZER                 MKII_BUZZER0
+
 #define Board_I2C0                  EK_TM4C1294XL_I2C7
 #define Board_I2C1                  EK_TM4C1294XL_I2C8
 #define Board_I2C_TMP               EK_TM4C1294XL_I2C7

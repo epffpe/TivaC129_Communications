@@ -19,8 +19,8 @@
 #define DIO_TASK_DLY_TICKS      10
 #define DIO_TASK_STK_SIZE       1024
 
-#define DIO_MAX_DI              2
-#define DIO_MAX_DO              2
+#define DIO_MAX_DI              4
+#define DIO_MAX_DO              6
 
 #define DI_EDGE_EN              1
 

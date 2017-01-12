@@ -27,14 +27,17 @@
 #define CTRL_FNCT_HOTCUP            9
 #define CTRL_FNCT_SET_PRIORITY      10
 
-#define CTRL_INPUT0                 0
-#define CTRL_INPUT1                 1
+#define CTRL_BOARD_SW1              0
+#define CTRL_BOARD_SW2              1
+#define CTRL_MKII_S1                3
+#define CTRL_MKII_S2                2
 
 #define CTRL_TARGET_RELAY0          0
 #define CTRL_TARGET_RELAY1          1
 
 #define CTRL_TARGET_STATUS_OUT0     2
 #define CTRL_TARGET_STATUS_OUT1     3
+#define CTRL_TARGET_STATUS_OUT2     4
 
 
 #ifdef CTRL_GLOBALS
@@ -44,17 +47,17 @@
 #endif
 
 typedef struct ctrl_cfg {
-    uint32_t    CTRLParam0;
-    uint32_t    CTRLParam1;
-    uint32_t    CTRLTargetRelay;
-    uint32_t    CTRLTargetStatus;
-    uint32_t    CTRLHoldDly;
-    uint32_t    CTRLOut;
-    uint32_t    CTRLOutFilt;
-    uint8_t     CTRLFunctSel;
-    uint8_t     CTRLPullUp;
-    uint8_t     CTRLPowerEn;
-    uint8_t     CTRLPriority;
+    uint32_t    CTRLParam0;             /* First parameter */
+    uint32_t    CTRLParam1;             /* Second parameter */
+    uint32_t    CTRLTargetRelay;        /* Target relays this function is going to change */
+    uint32_t    CTRLTargetStatus;       /* Target status output this function is going to change */
+    uint32_t    CTRLHoldDly;            /* Debounce time */
+    uint32_t    CTRLOut;                /* Output of the function before the power filter */
+    uint32_t    CTRLOutFilt;            /* Output of the function after the power filter */
+    uint8_t     CTRLFunctSel;           /* Function selected */
+    uint8_t     CTRLPullUp;             /*  */
+    uint8_t     CTRLPowerEn;            /*  */
+    uint8_t     CTRLPriority;           /* Priority of the input. Needs equal or higher priority to change an output */
 }CTRL_CFG;
 
 typedef struct ctrl_do {

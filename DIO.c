@@ -664,13 +664,19 @@ void DIOInitIO (void)
 const DIO_MAP DIMapTbl[DIO_MAX_DI] =
 {
  Board_BUTTON0,
- Board_BUTTON1
+ Board_BUTTON1,
+ MKII_BUTTON2,
+ MKII_BUTTON1
 };
 
 const DIO_MAP DOMapTbl[DIO_MAX_DO] =
 {
  Board_LED0,
- Board_LED1
+ Board_LED1,
+ MKII_LEDRED,
+ MKII_LEDGREEN,
+ MKII_LEDBLUE,
+ MKII_BUZZER
 };
 
 

@@ -23,7 +23,7 @@
 
 
 Task_Struct CTRLTaskStruct;
-Char CTRLTaskStk[CTRL_TASK_STK_SIZE];
+Char        CTRLTaskStk[CTRL_TASK_STK_SIZE];
 
 static uint8_t     CTRLPowerMask;
 //static bool         CTRLPullUp5or28;
@@ -36,8 +36,10 @@ static uint8_t     CTRLPowerMask;
 
 const uint8_t g_CTRLInputTable[] =
 {
- CTRL_INPUT0,
- CTRL_INPUT1
+ CTRL_BOARD_SW1,
+ CTRL_BOARD_SW2,
+ CTRL_MKII_S2,
+ CTRL_MKII_S1
 };
 
 #define CTRL_INPUT_TABLE_COUNT   (sizeof (g_CTRLInputTable) / sizeof (g_CTRLInputTable[0]))
@@ -68,7 +70,8 @@ CTRL_DO g_CTRTargetRelaysTable[] =
 CTRL_DO g_CTRTargetStatusOutpusTable[] =
 {
  {CTRL_TARGET_STATUS_OUT0, 0, 0xFF},
- {CTRL_TARGET_STATUS_OUT1, 0, 0xFF}
+ {CTRL_TARGET_STATUS_OUT1, 0, 0xFF},
+ {CTRL_TARGET_STATUS_OUT2, 0, 0xFF}
 };
 
 #define CRTL_TARGET_STATUS_OUT_TABLE_COUNT   (sizeof (g_CTRTargetStatusOutpusTable) / sizeof (g_CTRTargetStatusOutpusTable[0]))
@@ -163,7 +166,7 @@ static void CTRLCfgDInSetPriorityAtIndex(uint8_t index)
 {
     DICfgDebounce (index, 50, 500, 200);
     DISetDebounceEn(index, true);
-    DICfgMode(index, DI_MODE_INV);
+    DICfgMode(index, DI_MODE_TOGGLE_LOW_GOING);
     DISetBypassEn(index, false);
 }
 
@@ -212,11 +215,27 @@ static void CTRLLoadNVParam(void)
     uint8_t i;
     CTRL_CFG *pcfg;
     for (i = 0; i < CTRL_MAX_DI; i++){
-        pcfg = &CTRLCfgTbl[i];
-        pcfg->CTRLFunctSel = CTRL_FNCT_TOGLE;
-        pcfg->CTRLTargetRelay = 1;
+        pcfg                    = &CTRLCfgTbl[i];
+        pcfg->CTRLFunctSel      = CTRL_FNCT_TOGLE;
+        pcfg->CTRLTargetRelay   = (1 << 0)| (1 << 0);
+        pcfg->CTRLTargetStatus   = (1 << 2);
 
     }
+    pcfg = &CTRLCfgTbl[1];
+    pcfg->CTRLFunctSel      = CTRL_FNCT_SET_PRIORITY;
+    pcfg->CTRLTargetRelay   = 1;
+    pcfg->CTRLPriority      = 0xFE;
+    pcfg->CTRLParam0        = 0xFF;
+
+    pcfg                    = &CTRLCfgTbl[2];
+    pcfg->CTRLFunctSel      = CTRL_FNCT_SETON;
+    pcfg->CTRLTargetRelay   = (1 << 0);
+    pcfg->CTRLTargetStatus   = (1 << 0);
+
+    pcfg                    = &CTRLCfgTbl[3];
+    pcfg->CTRLFunctSel      = CTRL_FNCT_SETOFF;
+    pcfg->CTRLTargetRelay   = (1 << 0);
+    pcfg->CTRLTargetStatus   = (1 << 0);
 }
 
 void CTRLConfigureIO(void)
@@ -285,12 +304,26 @@ static void CTRLExecFuncMomentryAtIndex(uint8_t index)
 
 static void CTRLExecFuncSetOnAtIndex(uint8_t index)
 {
+    uint32_t l_din;
+    CTRL_CFG *l_pcfg;
+    uint8_t i;
 
+    l_pcfg = &CTRLCfgTbl[index];
+    i = g_CTRLInputTable[index];
+    l_din = DIGet(i);
+    l_pcfg->CTRLOut = l_din;
 }
 
 static void CTRLExecFuncSetOffAtIndex(uint8_t index)
 {
+    uint32_t l_din;
+    CTRL_CFG *l_pcfg;
+    uint8_t i;
 
+    l_pcfg = &CTRLCfgTbl[index];
+    i = g_CTRLInputTable[index];
+    l_din = DIGet(i);
+    l_pcfg->CTRLOut = l_din;
 }
 
 static void CTRLExecFuncSequenceAtIndex(uint8_t index)
@@ -325,7 +358,7 @@ static void CTRLExecFuncSetPriorityAtIndex(uint8_t index)
 
     l_pcfg = &CTRLCfgTbl[index];
     l_din = DIGet(index);
-    l_pcfg->CTRLOut = l_din ? l_pcfg->CTRLParam0 : l_pcfg->CTRLParam1;
+    l_pcfg->CTRLOut = l_din ? l_pcfg->CTRLPriority : l_pcfg->CTRLParam0;
 }
 
 
@@ -409,12 +442,16 @@ static void CTRLUpdateRelayMomentary(uint32_t index, uint32_t val)
 
 static void CTRLUpdateRelaySetOn(uint32_t index, uint32_t val)
 {
-
+    if (val) {
+        g_CTRTargetRelaysTable[index].CTRLVal = 1;
+    }
 }
 
 static void CTRLUpdateRelaySetOff(uint32_t index, uint32_t val)
 {
-
+    if (val) {
+        g_CTRTargetRelaysTable[index].CTRLVal = 0;
+    }
 }
 
 static void CTRLUpdateRelaySequence(uint32_t index, uint32_t val)
@@ -476,6 +513,95 @@ const pfnCTRLUpdateRelay g_CTRLUpdateRelayTable[] =
  *
  */
 
+static void CTRLUpdateStatusNone(uint32_t index, uint32_t val)
+{
+
+}
+
+static void CTRLUpdateStatusTogle(uint32_t index, uint32_t val)
+{
+    if (val) {
+        g_CTRTargetStatusOutpusTable[index].CTRLVal = g_CTRTargetStatusOutpusTable[index].CTRLVal ? 0 : 1;
+    }
+}
+
+static void CTRLUpdateStatusMomentary(uint32_t index, uint32_t val)
+{
+    g_CTRTargetStatusOutpusTable[index].CTRLVal = val;
+}
+
+static void CTRLUpdateStatusSetOn(uint32_t index, uint32_t val)
+{
+    if (val){
+        g_CTRTargetStatusOutpusTable[index].CTRLVal = 1;
+    }
+}
+
+static void CTRLUpdateStatusSetOff(uint32_t index, uint32_t val)
+{
+    if (val){
+        g_CTRTargetStatusOutpusTable[index].CTRLVal = 0;
+    }
+}
+
+static void CTRLUpdateStatusSequence(uint32_t index, uint32_t val)
+{
+
+}
+
+static void CTRLUpdateStatusBinaryCount(uint32_t index, uint32_t val)
+{
+
+}
+
+static void CTRLUpdateStatusOneShot(uint32_t index, uint32_t val)
+{
+
+}
+
+static void CTRLUpdateStatusMasterOffReset(uint32_t index, uint32_t val)
+{
+
+}
+
+static void CTRLUpdateStatusHotCup(uint32_t index, uint32_t val)
+{
+
+}
+
+static void CTRLUpdateStatusSetPriority(uint32_t index, uint32_t val)
+{
+    g_CTRTargetStatusOutpusTable[index].CTRLPriority = val;
+}
+
+/*
+ *
+ * TABLE FOR UPDATE RELAY
+ *
+ */
+const pfnCTRLUpdateRelay g_CTRLUpdateStatusTable[] =
+{
+ CTRLUpdateStatusNone,
+ CTRLUpdateStatusTogle,
+ CTRLUpdateStatusMomentary,
+ CTRLUpdateStatusSetOn,
+ CTRLUpdateStatusSetOff,
+ CTRLUpdateStatusSequence,
+ CTRLUpdateStatusBinaryCount,
+ CTRLUpdateStatusOneShot,
+ CTRLUpdateStatusMasterOffReset,
+ CTRLUpdateStatusHotCup,
+ CTRLUpdateStatusSetPriority
+};
+
+#define CRTL_UPDATE_STATUS_TABLE_COUNT   (sizeof (g_CTRLUpdateStatusTable) / sizeof (g_CTRLUpdateStatusTable[0]))
+
+/*
+ *
+ *
+ *
+ */
+
 static void CTRLUpdateTargetRelaysAtIndex(uint32_t index)
 {
     uint8_t i;
@@ -511,6 +637,11 @@ static void CTRLUpdateTargetStatusOutAtIndex(uint32_t index)
         val = pcfg->CTRLTargetStatus & mask;
         if (val) {
 //            DOSet(g_CTRTargetStatusOutpusTable[i], pcfg->CTRLOutFilt ? 1 : 0);
+            if (pcfg->CTRLFunctSel < CRTL_UPDATE_STATUS_TABLE_COUNT){
+                if (pcfg->CTRLPriority <= g_CTRTargetStatusOutpusTable[i].CTRLPriority) {
+                    g_CTRLUpdateStatusTable[pcfg->CTRLFunctSel](i, pcfg->CTRLOutFilt);
+                }
+            }
         }
     }
 }
@@ -543,6 +674,7 @@ Void CTRLTask(UArg arg0, UArg arg1)
 {
     arg0 = arg0;
     arg1 = arg1;
+
 
     CTRLLoadNVParam();
     CTRLConfigureIO();

@@ -180,9 +180,9 @@ int
 CMD_stat(UART_Handle uart, int argc, char **argv)
 {
 	int n;
-	char buff[128];
+	char buff[192];
 	bool exit = false, dataAvailable;
-	uint32_t in0, in1, led0, led1;
+	uint32_t in0, in1, in2, in3, led0, led1, led2, led3, led4;
 	(void)uart;
 
 
@@ -200,11 +200,16 @@ CMD_stat(UART_Handle uart, int argc, char **argv)
 				return (0);
 			}
 		}
-		in0 = DIGet(0);
-		in1 = DIGet(1);
-		led0 = DOGet(0);
-		led1 = DOGet(1);
-		n = sprintf(buff, "\r In0: \x1b[36m%d\x1b[0m, In1: \x1b[32m%d\x1b[0m, LED0: \x1b[36m%d\x1b[0m, LED1: \x1b[32m%d\x1b[0m   ", in0, in1, led0, led1);
+        in0 = DIGet(0);
+        in1 = DIGet(1);
+        in2 = DIGet(2);
+        in3 = DIGet(3);
+        led0 = DOGet(0);
+        led1 = DOGet(1);
+        led2 = DOGet(2);
+        led3 = DOGet(3);
+        led4 = DOGet(4);
+		n = sprintf(buff, "\r In0: \x1b[36m%d\x1b[0m, In1: \x1b[32m%d\x1b[0m, In2: \x1b[36m%d\x1b[0m, In3: \x1b[32m%d\x1b[0m, LED0: \x1b[36m%d\x1b[0m, LED1: \x1b[32m%d\x1b[0m, LEDR: \x1b[36m%d\x1b[0m, LEDG: \x1b[32m%d\x1b[0m, LEDB: \x1b[36m%d\x1b[0m   ", in0, in1, in2, in3, led0, led1, led2, led3, led4);
 		UART_write(uart, buff, n);
 		Task_sleep(100);
 	}
