@@ -25,6 +25,7 @@
 #define CTRL_FNCT_ONE_SHOT          7
 #define CTRL_FNCT_MASTER_OFF_RESET  8
 #define CTRL_FNCT_HOTCUP            9
+#define CTRL_FNCT_SET_PRIORITY      10
 
 
 #define CTRL_TARGET_RELAY0          0
@@ -41,7 +42,6 @@
 #endif
 
 typedef struct ctrl_cfg {
-    uint8_t     CTRLFunctSel;
     uint32_t    CTRLParam0;
     uint32_t    CTRLParam1;
     uint32_t    CTRLTargetRelay;
@@ -49,13 +49,16 @@ typedef struct ctrl_cfg {
     uint32_t    CTRLHoldDly;
     uint32_t    CTRLOut;
     uint32_t    CTRLOutFilt;
+    uint8_t     CTRLFunctSel;
     uint8_t     CTRLPullUp;
     uint8_t     CTRLPowerEn;
+    uint8_t     CTRLPriority;
 }CTRL_CFG;
 
 typedef struct ctrl_do {
     const uint32_t      CTRLDout;
     uint32_t            CTRLVal;
+    uint8_t             CTRLPriority;
 }CTRL_DO;
 
 

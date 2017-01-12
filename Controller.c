@@ -36,8 +36,8 @@ static uint8_t     CTRLPowerMask;
 
 CTRL_DO g_CTRTargetRelaysTable[] =
 {
- {CTRL_TARGET_RELAY0, 0},
- {CTRL_TARGET_RELAY1, 0}
+ {CTRL_TARGET_RELAY0, 0, 0xFF},
+ {CTRL_TARGET_RELAY1, 0, 0xFF}
 };
 
 #define CRTL_TARGET_RELAYS_TABLE_COUNT   (sizeof (g_CTRTargetRelaysTable) / sizeof (g_CTRTargetRelaysTable[0]))
@@ -50,8 +50,8 @@ CTRL_DO g_CTRTargetRelaysTable[] =
 
 CTRL_DO g_CTRTargetStatusOutpusTable[] =
 {
- {CTRL_TARGET_STATUS_OUT0, 0},
- {CTRL_TARGET_STATUS_OUT1, 0}
+ {CTRL_TARGET_STATUS_OUT0, 0, 0xFF},
+ {CTRL_TARGET_STATUS_OUT1, 0, 0xFF}
 };
 
 #define CRTL_TARGET_STATUS_OUT_TABLE_COUNT   (sizeof (g_CTRTargetStatusOutpusTable) / sizeof (g_CTRTargetStatusOutpusTable[0]))
@@ -142,6 +142,14 @@ static void CTRLCfgDInHotCupAtIndex(uint8_t index)
     DISetBypassEn(index, false);
 }
 
+static void CTRLCfgDInSetPriorityAtIndex(uint8_t index)
+{
+    DICfgDebounce (index, 50, 500, 200);
+    DISetDebounceEn(index, true);
+    DICfgMode(index, DI_MODE_INV);
+    DISetBypassEn(index, false);
+}
+
 /*
  *
  * TABLE FOR INPUT CONFIGURATION
@@ -158,7 +166,8 @@ const pfnCTRLCfgIn g_CTRLCfgDInTable[] =
  CTRLCfgDInBinaryCountAtIndex,
  CTRLCfgDInOneShotAtIndex,
  CTRLCfgDInMasterOffResetAtIndex,
- CTRLCfgDInHotCupAtIndex
+ CTRLCfgDInHotCupAtIndex,
+ CTRLCfgDInSetPriorityAtIndex
 };
 
 #define CRTL_CFG_DIN_TABLE_COUNT   (sizeof (g_CTRLCfgDInTable) / sizeof (g_CTRLCfgDInTable[0]))
@@ -287,6 +296,16 @@ static void CTRLExecFuncHotCupAtIndex(uint8_t index)
 
 }
 
+static void CTRLExecFuncSetPriorityAtIndex(uint8_t index)
+{
+    uint32_t l_din;
+    CTRL_CFG *l_pcfg;
+
+    l_pcfg = &CTRLCfgTbl[index];
+    l_din = DIGet(index);
+    l_pcfg->CTRLOut = l_din ? l_pcfg->CTRLParam0 : l_pcfg->CTRLParam1;
+}
+
 
 /*
  *
@@ -304,7 +323,8 @@ const pfnCTRLCfgIn g_CTRLExecFuncTable[] =
  CTRLExecFuncBinaryCountAtIndex,
  CTRLExecFuncOneShotAtIndex,
  CTRLExecFuncMasterOffResetAtIndex,
- CTRLExecFuncHotCupAtIndex
+ CTRLExecFuncHotCupAtIndex,
+ CTRLExecFuncSetPriorityAtIndex
 };
 
 #define CRTL_EXEC_FUNC_TABLE_COUNT   (sizeof (g_CTRLExecFuncTable) / sizeof (g_CTRLExecFuncTable[0]))
@@ -400,6 +420,11 @@ static void CTRLUpdateRelayHotCup(uint32_t index, uint32_t val)
 
 }
 
+static void CTRLUpdateRelaySetPriority(uint32_t index, uint32_t val)
+{
+    g_CTRTargetRelaysTable[index].CTRLPriority = val;
+}
+
 /*
  *
  * TABLE FOR UPDATE RELAY
@@ -416,11 +441,18 @@ const pfnCTRLUpdateRelay g_CTRLUpdateRelayTable[] =
  CTRLUpdateRelayBinaryCount,
  CTRLUpdateRelayOneShot,
  CTRLUpdateRelayMasterOffReset,
- CTRLUpdateRelayHotCup
+ CTRLUpdateRelayHotCup,
+ CTRLUpdateRelaySetPriority
 };
 
 #define CRTL_UPDATE_RELAY_TABLE_COUNT   (sizeof (g_CTRLUpdateRelayTable) / sizeof (g_CTRLUpdateRelayTable[0]))
 
+
+/*
+ *
+ *
+ *
+ */
 
 static void CTRLUpdateTargetRelaysAtIndex(uint32_t index)
 {
@@ -435,7 +467,9 @@ static void CTRLUpdateTargetRelaysAtIndex(uint32_t index)
         val = pcfg->CTRLTargetRelay & mask;
         if (val) {
             if (pcfg->CTRLFunctSel < CRTL_UPDATE_RELAY_TABLE_COUNT){
-                g_CTRLUpdateRelayTable[pcfg->CTRLFunctSel](i, pcfg->CTRLOutFilt);
+                if (pcfg->CTRLPriority <= g_CTRTargetRelaysTable[i].CTRLPriority) {
+                    g_CTRLUpdateRelayTable[pcfg->CTRLFunctSel](i, pcfg->CTRLOutFilt);
+                }
             }
         }
     }
@@ -529,6 +563,7 @@ void CTRLInit(void)
         pcfg->CTRLOutFilt       = 0;
         pcfg->CTRLPullUp        = 0;
         pcfg->CTRLPowerEn       = 0;
+        pcfg->CTRLPriority      = 0xFF;
 
         pcfg++;
     }
