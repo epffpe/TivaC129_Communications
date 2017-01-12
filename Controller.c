@@ -30,6 +30,23 @@ static uint8_t     CTRLPowerMask;
 
 /*
  *
+ * INPUT MAPPING
+ *
+ */
+
+const uint8_t g_CTRLInputTable[] =
+{
+ CTRL_INPUT0,
+ CTRL_INPUT1
+};
+
+#define CTRL_INPUT_TABLE_COUNT   (sizeof (g_CTRLInputTable) / sizeof (g_CTRLInputTable[0]))
+#define CTRL_MAX_DI             CTRL_INPUT_TABLE_COUNT
+
+CTRL_CFG CTRLCfgTbl[CTRL_INPUT_TABLE_COUNT];
+
+/*
+ *
  * TARGET RELAYS OUTPUT MAP
  *
  */
@@ -204,13 +221,14 @@ static void CTRLLoadNVParam(void)
 
 void CTRLConfigureIO(void)
 {
-    uint8_t i;
+    uint8_t i, index;
     CTRL_CFG *pcfg;
 
     for (i = 0; i < CTRL_MAX_DI; i++){
         pcfg = &CTRLCfgTbl[i];
         if (pcfg->CTRLFunctSel < CRTL_CFG_DIN_TABLE_COUNT){
-            g_CTRLCfgDInTable[pcfg->CTRLFunctSel](i);
+            index = g_CTRLInputTable[i];
+            g_CTRLCfgDInTable[pcfg->CTRLFunctSel](index);
         }
 
     }
@@ -244,9 +262,11 @@ static void CTRLExecFuncTogleAtIndex(uint8_t index)
 {
     uint32_t l_din;
     CTRL_CFG *l_pcfg;
+    uint8_t i;
 
     l_pcfg = &CTRLCfgTbl[index];
-    l_din = DIGet(index);
+    i = g_CTRLInputTable[index];
+    l_din = DIGet(i);
     DIClr(index);
     l_pcfg->CTRLOut = l_din;
 }
@@ -255,9 +275,11 @@ static void CTRLExecFuncMomentryAtIndex(uint8_t index)
 {
     uint32_t l_din;
     CTRL_CFG *l_pcfg;
+    uint8_t i;
 
     l_pcfg = &CTRLCfgTbl[index];
-    l_din = DIGet(index);
+    i = g_CTRLInputTable[index];
+    l_din = DIGet(i);
     l_pcfg->CTRLOut = l_din;
 }
 

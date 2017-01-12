@@ -12,7 +12,7 @@
 #define CTRL_TASK_DLY_TICKS         10
 #define CTRL_TASK_STK_SIZE          512
 
-#define CTRL_MAX_DI                 2
+//#define CTRL_MAX_DI                 2
 
 
 #define CTRL_FNCT_NONE              0
@@ -27,6 +27,8 @@
 #define CTRL_FNCT_HOTCUP            9
 #define CTRL_FNCT_SET_PRIORITY      10
 
+#define CTRL_INPUT0                 0
+#define CTRL_INPUT1                 1
 
 #define CTRL_TARGET_RELAY0          0
 #define CTRL_TARGET_RELAY1          1
@@ -71,7 +73,7 @@ extern "C"
 #endif
 
 
-CTRL_EXT CTRL_CFG CTRLCfgTbl[CTRL_MAX_DI];
+//CTRL_EXT CTRL_CFG CTRLCfgTbl[CTRL_MAX_DI];
 
 
 
