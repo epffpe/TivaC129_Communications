@@ -190,6 +190,7 @@ int main(void)
 //    GPIO_write(Board_LED1, 1);
     initTTY();
     DIOInit();
+    CTRLInit();
 
 
     /* Start BIOS */

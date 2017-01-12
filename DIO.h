@@ -162,6 +162,8 @@ void        DICfgMode(uint8_t n, uint8_t mode);
 uint32_t    DIGet(uint8_t n);
 void        DISetBypassEn (uint8_t n, bool state);
 void        DISetBypass(uint8_t n, uint32_t val);
+void        DISetDebounceEn(uint8_t n, bool state);
+void        DICfgDebounce (uint8_t n, uint32_t debDly, uint32_t rpStartDly, uint32_t rpDly);
 
 #if         DI_EDGE_EN
 void        DIClr(uint8_t n);

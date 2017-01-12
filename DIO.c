@@ -301,9 +301,10 @@ void DIOInit(void)
     taskParams.stackSize = DIO_TASK_STK_SIZE;
     taskParams.priority = DIO_TASK_PRIO;
     taskParams.arg0 = (UArg)0;
+    taskParams.stack = DIOTaskStk;
     taskHandle = Task_create((Task_FuncPtr)DIOTask, &taskParams, &eb);
     if (taskHandle == NULL) {
-        System_printf("netOpenHook: Failed to create tcpHandler Task\n");
+        System_printf("Failed to create DIOTask Task\n");
     }
 
     System_flush();
@@ -366,6 +367,30 @@ void DISetBypassEn (uint8_t n, bool state)
     if (n < DIO_MAX_DI) {
         OS_ENTER_CRITICAL();
         DITbl[n].DIBypassEn = state;
+        OS_EXIT_CRITICAL();
+    }
+}
+
+void DISetDebounceEn(uint8_t n, bool state)
+{
+    if (n < DIO_MAX_DI) {
+        OS_ENTER_CRITICAL();
+        DITbl[n].DIDebounceEn = state;
+        OS_EXIT_CRITICAL();
+    }
+}
+
+void DICfgDebounce (uint8_t n, uint32_t debDly, uint32_t rpStartDly, uint32_t rpDly)
+{
+    debDly          /= DIO_TASK_DLY_TICKS;
+    rpStartDly      /= DIO_TASK_DLY_TICKS;
+    rpDly           /= DIO_TASK_DLY_TICKS;
+
+    if (n < DIO_MAX_DI) {
+        OS_ENTER_CRITICAL();
+        DITbl[n].DIDebounceDly  = debDly;
+        DITbl[n].DIRptStartDly  = rpStartDly;
+        DITbl[n].DIRptDly       = rpDly;
         OS_EXIT_CRITICAL();
     }
 }

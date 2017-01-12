@@ -53,6 +53,7 @@
 #include "tty.h"
 #include "ttybin.h"
 #include "dio.h"
+#include "Controller.h"
 
 
 /*
