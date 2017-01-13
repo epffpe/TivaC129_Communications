@@ -225,7 +225,7 @@ static void CTRLLoadNVParam(void)
     pcfg->CTRLFunctSel      = CTRL_FNCT_ONE_SHOT;
     pcfg->CTRLTargetRelay   = 1;
     pcfg->CTRLPriority      = 0xFE;
-    pcfg->CTRLParam0        = 200;
+    pcfg->CTRLParam0        = 6000;
 
     pcfg                    = &CTRLCfgTbl[2];
     pcfg->CTRLFunctSel      = CTRL_FNCT_SETON;
@@ -511,6 +511,8 @@ static void CTRLUpdateRelayMasterOffReset(uint32_t index, uint32_t val)
 {
     if (val) {
         g_CTRTargetRelaysTable[index].CTRLVal = 0;
+        g_CTRTargetRelaysTable[index].CTRLCtr = 0;
+        g_CTRTargetRelaysTable[index].CTRLState = CTRL_ONESHOT_IDLE;
     }
 }
 
@@ -624,6 +626,8 @@ static void CTRLUpdateStatusMasterOffReset(uint32_t index, uint32_t val)
 {
     if (val){
         g_CTRTargetStatusOutpusTable[index].CTRLVal = 0;
+        g_CTRTargetStatusOutpusTable[index].CTRLCtr = 0;
+        g_CTRTargetStatusOutpusTable[index].CTRLState = CTRL_ONESHOT_IDLE;
     }
 }
 
