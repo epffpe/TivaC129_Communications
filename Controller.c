@@ -126,7 +126,7 @@ static void CTRLCfgDInSequenceAtIndex(uint8_t index)
 {
     DICfgDebounce (index, 50, 500, 200);
     DISetDebounceEn(index, true);
-    DICfgMode(index, DI_MODE_INV);
+    DICfgMode(index, DI_MODE_EDGE_LOW_GOING);
     DISetBypassEn(index, false);
 }
 
@@ -212,7 +212,7 @@ void CTRLCfgDOut()
  */
 static void CTRLLoadNVParam(void)
 {
-    uint8_t i;
+    uint32_t i;
     CTRL_CFG *pcfg;
     for (i = 0; i < CTRL_MAX_DI; i++){
         pcfg                    = &CTRLCfgTbl[i];
@@ -225,17 +225,22 @@ static void CTRLLoadNVParam(void)
     pcfg->CTRLFunctSel      = CTRL_FNCT_ONE_SHOT;
     pcfg->CTRLTargetRelay   = 1;
     pcfg->CTRLPriority      = 0xFE;
-    pcfg->CTRLParam0        = 6000;
+    pcfg->CTRLParam0        = 1000;
 
     pcfg                    = &CTRLCfgTbl[2];
-    pcfg->CTRLFunctSel      = CTRL_FNCT_SETON;
+    pcfg->CTRLFunctSel      = CTRL_FNCT_SEQUENCE;
     pcfg->CTRLTargetRelay   = (1 << 0);
-    pcfg->CTRLTargetStatus   = (1 << 0);
+    pcfg->CTRLTargetStatus  = (1 << 0);
+    pcfg->CTRLParam0        = 0;
 
     pcfg                    = &CTRLCfgTbl[3];
     pcfg->CTRLFunctSel      = CTRL_FNCT_MASTER_OFF_RESET;
     pcfg->CTRLTargetRelay   = (1 << 0);
     pcfg->CTRLTargetStatus   = (1 << 0);
+
+    SEQSequenceStepConfigure(0, 0, CTRL_TARGET_RELAY0);
+    SEQSequenceStepConfigure(0, 1, CTRL_TARGET_RELAY1);
+    SEQSequenceStepConfigure(0, 2, CTRL_TARGET_RELAY1|SEQ_CTL_END);
 }
 
 void CTRLConfigureIO(void)
@@ -328,7 +333,15 @@ static void CTRLExecFuncSetOffAtIndex(uint8_t index)
 
 static void CTRLExecFuncSequenceAtIndex(uint8_t index)
 {
+    uint32_t l_din;
+    CTRL_CFG *l_pcfg;
+    uint8_t i;
 
+    l_pcfg = &CTRLCfgTbl[index];
+    i = g_CTRLInputTable[index];
+    l_din = DIGet(i);
+    DIClr(index);
+    l_pcfg->CTRLOut = l_din ? 1 : 0;
 }
 
 static void CTRLExecFuncBinaryCountAtIndex(uint8_t index)
@@ -448,26 +461,36 @@ static void CTRLUpdateRelayNone(uint32_t index, uint32_t val)
 static void CTRLUpdateRelayTogle(uint32_t index, uint32_t val)
 {
     if (val) {
-        g_CTRTargetRelaysTable[index].CTRLVal = g_CTRTargetRelaysTable[index].CTRLVal ? 0 : 1;
+        if (index < CRTL_TARGET_RELAYS_TABLE_COUNT) {
+            g_CTRTargetRelaysTable[index].CTRLVal = g_CTRTargetRelaysTable[index].CTRLVal ? 0 : 1;
+        }
     }
 }
 
 static void CTRLUpdateRelayMomentary(uint32_t index, uint32_t val)
 {
-    g_CTRTargetRelaysTable[index].CTRLVal = val;
+    if (index < CRTL_TARGET_RELAYS_TABLE_COUNT) {
+        g_CTRTargetRelaysTable[index].CTRLVal = val;
+    }
 }
 
 static void CTRLUpdateRelaySetOn(uint32_t index, uint32_t val)
 {
     if (val) {
-        g_CTRTargetRelaysTable[index].CTRLVal = 1;
+        if (index < CRTL_TARGET_RELAYS_TABLE_COUNT) {
+            g_CTRTargetRelaysTable[index].CTRLVal = 1;
+        }
     }
 }
 
 static void CTRLUpdateRelaySetOff(uint32_t index, uint32_t val)
 {
     if (val) {
-        g_CTRTargetRelaysTable[index].CTRLVal = 0;
+        if (index < CRTL_TARGET_RELAYS_TABLE_COUNT) {
+            g_CTRTargetRelaysTable[index].CTRLVal = 0;
+            g_CTRTargetRelaysTable[index].CTRLCtr = 0;
+            g_CTRTargetRelaysTable[index].CTRLState = CTRL_ONESHOT_IDLE;
+        }
     }
 }
 
@@ -483,36 +506,41 @@ static void CTRLUpdateRelayBinaryCount(uint32_t index, uint32_t val)
 
 static void CTRLUpdateRelayOneShot(uint32_t index, uint32_t val)
 {
-    switch(g_CTRTargetRelaysTable[index].CTRLState){
-    case CTRL_ONESHOT_IDLE:
-        if (val){
-            g_CTRTargetRelaysTable[index].CTRLVal = 1;
-            g_CTRTargetRelaysTable[index].CTRLState = CTRL_ONESHOT_WAIT;
-            g_CTRTargetRelaysTable[index].CTRLCtr = val;
-        }
-        break;
-    case CTRL_ONESHOT_WAIT:
-        if (g_CTRTargetRelaysTable[index].CTRLCtr > 0){
-            g_CTRTargetRelaysTable[index].CTRLCtr--;
-            if (g_CTRTargetRelaysTable[index].CTRLCtr == 0){
-                g_CTRTargetRelaysTable[index].CTRLVal = 0;
-                g_CTRTargetRelaysTable[index].CTRLState = CTRL_ONESHOT_IDLE;
+    if (index < CRTL_TARGET_RELAYS_TABLE_COUNT) {
+        switch(g_CTRTargetRelaysTable[index].CTRLState){
+        case CTRL_ONESHOT_IDLE:
+            if (val){
+
+                g_CTRTargetRelaysTable[index].CTRLVal = 1;
+                g_CTRTargetRelaysTable[index].CTRLState = CTRL_ONESHOT_WAIT;
+                g_CTRTargetRelaysTable[index].CTRLCtr = val;
             }
+            break;
+        case CTRL_ONESHOT_WAIT:
+            if (g_CTRTargetRelaysTable[index].CTRLCtr > 0){
+                g_CTRTargetRelaysTable[index].CTRLCtr--;
+                if (g_CTRTargetRelaysTable[index].CTRLCtr == 0){
+                    g_CTRTargetRelaysTable[index].CTRLVal = 0;
+                    g_CTRTargetRelaysTable[index].CTRLState = CTRL_ONESHOT_IDLE;
+                }
+            }
+            break;
+        default:
+            g_CTRTargetRelaysTable[index].CTRLState = CTRL_ONESHOT_IDLE;
+            g_CTRTargetRelaysTable[index].CTRLVal = 0;
+            break;
         }
-        break;
-    default:
-        g_CTRTargetRelaysTable[index].CTRLState = CTRL_ONESHOT_IDLE;
-        g_CTRTargetRelaysTable[index].CTRLVal = 0;
-        break;
     }
 }
 
 static void CTRLUpdateRelayMasterOffReset(uint32_t index, uint32_t val)
 {
     if (val) {
-        g_CTRTargetRelaysTable[index].CTRLVal = 0;
-        g_CTRTargetRelaysTable[index].CTRLCtr = 0;
-        g_CTRTargetRelaysTable[index].CTRLState = CTRL_ONESHOT_IDLE;
+        if (index < CRTL_TARGET_RELAYS_TABLE_COUNT) {
+            g_CTRTargetRelaysTable[index].CTRLVal = 0;
+            g_CTRTargetRelaysTable[index].CTRLCtr = 0;
+            g_CTRTargetRelaysTable[index].CTRLState = CTRL_ONESHOT_IDLE;
+        }
     }
 }
 
@@ -523,7 +551,9 @@ static void CTRLUpdateRelayHotCup(uint32_t index, uint32_t val)
 
 static void CTRLUpdateRelaySetPriority(uint32_t index, uint32_t val)
 {
-    g_CTRTargetRelaysTable[index].CTRLPriority = val;
+    if (index < CRTL_TARGET_RELAYS_TABLE_COUNT) {
+        g_CTRTargetRelaysTable[index].CTRLPriority = val;
+    }
 }
 
 /*
@@ -563,71 +593,91 @@ static void CTRLUpdateStatusNone(uint32_t index, uint32_t val)
 static void CTRLUpdateStatusTogle(uint32_t index, uint32_t val)
 {
     if (val) {
-        g_CTRTargetStatusOutpusTable[index].CTRLVal = g_CTRTargetStatusOutpusTable[index].CTRLVal ? 0 : 1;
+        if (index < CRTL_TARGET_STATUS_OUT_TABLE_COUNT) {
+            g_CTRTargetStatusOutpusTable[index].CTRLVal = g_CTRTargetStatusOutpusTable[index].CTRLVal ? 0 : 1;
+        }
     }
 }
 
 static void CTRLUpdateStatusMomentary(uint32_t index, uint32_t val)
 {
-    g_CTRTargetStatusOutpusTable[index].CTRLVal = val;
+    if (index < CRTL_TARGET_STATUS_OUT_TABLE_COUNT) {
+        g_CTRTargetStatusOutpusTable[index].CTRLVal = val;
+    }
 }
 
 static void CTRLUpdateStatusSetOn(uint32_t index, uint32_t val)
 {
     if (val){
-        g_CTRTargetStatusOutpusTable[index].CTRLVal = 1;
+        if (index < CRTL_TARGET_STATUS_OUT_TABLE_COUNT) {
+            g_CTRTargetStatusOutpusTable[index].CTRLVal = 1;
+        }
     }
 }
 
 static void CTRLUpdateStatusSetOff(uint32_t index, uint32_t val)
 {
     if (val){
-        g_CTRTargetStatusOutpusTable[index].CTRLVal = 0;
+        if (index < CRTL_TARGET_STATUS_OUT_TABLE_COUNT) {
+            g_CTRTargetStatusOutpusTable[index].CTRLVal = 0;
+        }
     }
 }
 
 static void CTRLUpdateStatusSequence(uint32_t index, uint32_t val)
 {
-
+    if (val){
+        if (index < CRTL_TARGET_STATUS_OUT_TABLE_COUNT) {
+            g_CTRTargetStatusOutpusTable[index].CTRLVal = 0;
+        }
+    }
 }
 
 static void CTRLUpdateStatusBinaryCount(uint32_t index, uint32_t val)
 {
-
+    if (val){
+        if (index < CRTL_TARGET_STATUS_OUT_TABLE_COUNT) {
+            g_CTRTargetStatusOutpusTable[index].CTRLVal = 0;
+        }
+    }
 }
 
 static void CTRLUpdateStatusOneShot(uint32_t index, uint32_t val)
 {
-    switch(g_CTRTargetStatusOutpusTable[index].CTRLState){
-    case CTRL_ONESHOT_IDLE:
-        if (val){
-            g_CTRTargetStatusOutpusTable[index].CTRLVal = 1;
-            g_CTRTargetStatusOutpusTable[index].CTRLState = CTRL_ONESHOT_WAIT;
-            g_CTRTargetStatusOutpusTable[index].CTRLCtr = val;
-        }
-        break;
-    case CTRL_ONESHOT_WAIT:
-        if (g_CTRTargetStatusOutpusTable[index].CTRLCtr > 0){
-            g_CTRTargetStatusOutpusTable[index].CTRLCtr--;
-            if (g_CTRTargetStatusOutpusTable[index].CTRLCtr == 0){
-                g_CTRTargetStatusOutpusTable[index].CTRLVal = 0;
-                g_CTRTargetStatusOutpusTable[index].CTRLState = CTRL_ONESHOT_IDLE;
+    if (index < CRTL_TARGET_STATUS_OUT_TABLE_COUNT) {
+        switch(g_CTRTargetStatusOutpusTable[index].CTRLState){
+        case CTRL_ONESHOT_IDLE:
+            if (val){
+                g_CTRTargetStatusOutpusTable[index].CTRLVal = 1;
+                g_CTRTargetStatusOutpusTable[index].CTRLState = CTRL_ONESHOT_WAIT;
+                g_CTRTargetStatusOutpusTable[index].CTRLCtr = val;
             }
+            break;
+        case CTRL_ONESHOT_WAIT:
+            if (g_CTRTargetStatusOutpusTable[index].CTRLCtr > 0){
+                g_CTRTargetStatusOutpusTable[index].CTRLCtr--;
+                if (g_CTRTargetStatusOutpusTable[index].CTRLCtr == 0){
+                    g_CTRTargetStatusOutpusTable[index].CTRLVal = 0;
+                    g_CTRTargetStatusOutpusTable[index].CTRLState = CTRL_ONESHOT_IDLE;
+                }
+            }
+            break;
+        default:
+            g_CTRTargetStatusOutpusTable[index].CTRLState = CTRL_ONESHOT_IDLE;
+            g_CTRTargetStatusOutpusTable[index].CTRLVal = 0;
+            break;
         }
-        break;
-    default:
-        g_CTRTargetStatusOutpusTable[index].CTRLState = CTRL_ONESHOT_IDLE;
-        g_CTRTargetStatusOutpusTable[index].CTRLVal = 0;
-        break;
     }
 }
 
 static void CTRLUpdateStatusMasterOffReset(uint32_t index, uint32_t val)
 {
     if (val){
-        g_CTRTargetStatusOutpusTable[index].CTRLVal = 0;
-        g_CTRTargetStatusOutpusTable[index].CTRLCtr = 0;
-        g_CTRTargetStatusOutpusTable[index].CTRLState = CTRL_ONESHOT_IDLE;
+        if (index < CRTL_TARGET_STATUS_OUT_TABLE_COUNT) {
+            g_CTRTargetStatusOutpusTable[index].CTRLVal = 0;
+            g_CTRTargetStatusOutpusTable[index].CTRLCtr = 0;
+            g_CTRTargetStatusOutpusTable[index].CTRLState = CTRL_ONESHOT_IDLE;
+        }
     }
 }
 
@@ -638,7 +688,9 @@ static void CTRLUpdateStatusHotCup(uint32_t index, uint32_t val)
 
 static void CTRLUpdateStatusSetPriority(uint32_t index, uint32_t val)
 {
-    g_CTRTargetStatusOutpusTable[index].CTRLPriority = val;
+    if (index < CRTL_TARGET_STATUS_OUT_TABLE_COUNT) {
+        g_CTRTargetStatusOutpusTable[index].CTRLPriority = val;
+    }
 }
 
 /*
@@ -683,7 +735,9 @@ static void CTRLUpdateTargetRelaysAtIndex(uint32_t index)
         if (val) {
             if (pcfg->CTRLFunctSel < CRTL_UPDATE_RELAY_TABLE_COUNT){
                 if (pcfg->CTRLPriority <= g_CTRTargetRelaysTable[i].CTRLPriority) {
-                    g_CTRLUpdateRelayTable[pcfg->CTRLFunctSel](i, pcfg->CTRLOutFilt);
+                    if (g_CTRLUpdateRelayTable[pcfg->CTRLFunctSel]){
+                        g_CTRLUpdateRelayTable[pcfg->CTRLFunctSel](i, pcfg->CTRLOutFilt);
+                    }
                 }
             }
         }
@@ -706,21 +760,57 @@ static void CTRLUpdateTargetStatusOutAtIndex(uint32_t index)
 //            DOSet(g_CTRTargetStatusOutpusTable[i], pcfg->CTRLOutFilt ? 1 : 0);
             if (pcfg->CTRLFunctSel < CRTL_UPDATE_STATUS_TABLE_COUNT){
                 if (pcfg->CTRLPriority <= g_CTRTargetStatusOutpusTable[i].CTRLPriority) {
-                    g_CTRLUpdateStatusTable[pcfg->CTRLFunctSel](i, pcfg->CTRLOutFilt);
+                    if (g_CTRLUpdateStatusTable[pcfg->CTRLFunctSel]){
+                        g_CTRLUpdateStatusTable[pcfg->CTRLFunctSel](i, pcfg->CTRLOutFilt);
+                    }
                 }
             }
         }
     }
 }
 
+static void CTRLUpdateSequenceAtIndex(uint32_t index)
+{
+    uint32_t i;
+    CTRL_CFG *pcfg;
+
+    pcfg = &CTRLCfgTbl[index];
+
+    if (pcfg->CTRLOutFilt){
+        if (pcfg->CTRLActualIndex < CRTL_TARGET_RELAYS_TABLE_COUNT) {
+            g_CTRTargetRelaysTable[pcfg->CTRLActualIndex].CTRLVal = 0;
+            g_CTRTargetRelaysTable[pcfg->CTRLActualIndex].CTRLCtr = 0;
+            g_CTRTargetRelaysTable[pcfg->CTRLActualIndex].CTRLState = CTRL_ONESHOT_IDLE;
+        }
+
+        SEQGetValueUpdateStep(pcfg->CTRLParam0, &pcfg->CTRLActualStep, &pcfg->CTRLActualIndex);
+        if (pcfg->CTRLActualIndex < CRTL_TARGET_RELAYS_TABLE_COUNT) {
+            g_CTRTargetRelaysTable[pcfg->CTRLActualIndex].CTRLVal = 1;
+        }
+    }
+
+}
+
 
 static void CTRLUpdateOutputs(void)
 {
     uint8_t i;
+    CTRL_CFG *pcfg;
 
     for (i = 0; i < CTRL_MAX_DI; i++){
-        CTRLUpdateTargetRelaysAtIndex(i);
-        CTRLUpdateTargetStatusOutAtIndex(i);
+        pcfg = &CTRLCfgTbl[i];
+        switch (pcfg->CTRLFunctSel){
+        case CTRL_FNCT_SEQUENCE:
+            CTRLUpdateSequenceAtIndex(i);
+            CTRLUpdateTargetStatusOutAtIndex(i);
+            break;
+        case CTRL_FNCT_HOTCUP:
+            break;
+        default:
+            CTRLUpdateTargetRelaysAtIndex(i);
+            CTRLUpdateTargetStatusOutAtIndex(i);
+            break;
+        }
     }
     for (i = 0; i < CRTL_TARGET_RELAYS_TABLE_COUNT; i++){
         DOSet(g_CTRTargetRelaysTable[i].CTRLDout, g_CTRTargetRelaysTable[i].CTRLVal ? 1 : 0);
@@ -742,7 +832,7 @@ Void CTRLTask(UArg arg0, UArg arg1)
     arg0 = arg0;
     arg1 = arg1;
 
-
+    SEQInit();
     CTRLLoadNVParam();
     CTRLConfigureIO();
 

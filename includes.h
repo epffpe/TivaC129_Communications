@@ -54,6 +54,7 @@
 #include "ttybin.h"
 #include "dio.h"
 #include "Controller.h"
+#include "sequencer.h"
 
 
 /*

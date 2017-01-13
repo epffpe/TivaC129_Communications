@@ -58,6 +58,8 @@ typedef struct ctrl_cfg {
     uint32_t    CTRLHoldDly;            /* Debounce time */
     uint32_t    CTRLOut;                /* Output of the function before the power filter */
     uint32_t    CTRLOutFilt;            /* Output of the function after the power filter */
+    uint32_t    CTRLActualStep;
+    uint32_t    CTRLActualIndex;
     uint8_t     CTRLFunctSel;           /* Function selected */
     uint8_t     CTRLPullUp;             /*  */
     uint8_t     CTRLPowerEn;            /*  */
