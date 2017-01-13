@@ -225,7 +225,7 @@ static void CTRLLoadNVParam(void)
     pcfg->CTRLFunctSel      = CTRL_FNCT_ONE_SHOT;
     pcfg->CTRLTargetRelay   = 1;
     pcfg->CTRLPriority      = 0xFE;
-    pcfg->CTRLParam0        = 100;
+    pcfg->CTRLParam0        = 200;
 
     pcfg                    = &CTRLCfgTbl[2];
     pcfg->CTRLFunctSel      = CTRL_FNCT_SETON;
@@ -233,7 +233,7 @@ static void CTRLLoadNVParam(void)
     pcfg->CTRLTargetStatus   = (1 << 0);
 
     pcfg                    = &CTRLCfgTbl[3];
-    pcfg->CTRLFunctSel      = CTRL_FNCT_SETOFF;
+    pcfg->CTRLFunctSel      = CTRL_FNCT_MASTER_OFF_RESET;
     pcfg->CTRLTargetRelay   = (1 << 0);
     pcfg->CTRLTargetStatus   = (1 << 0);
 }
@@ -351,7 +351,16 @@ static void CTRLExecFuncOneShotAtIndex(uint8_t index)
 
 static void CTRLExecFuncMasterOffResetAtIndex(uint8_t index)
 {
+    uint32_t l_din;
+    CTRL_CFG *l_pcfg;
+    uint8_t i;
 
+    l_pcfg = &CTRLCfgTbl[index];
+    i = g_CTRLInputTable[index];
+    l_din = DIGet(i);
+    l_pcfg->CTRLOut = l_din;
+    l_pcfg->CTRLTargetRelay = 0xFFFFFFFF;
+    l_pcfg->CTRLTargetStatus = 0xFFFFFFFF;
 }
 
 static void CTRLExecFuncHotCupAtIndex(uint8_t index)
@@ -500,7 +509,9 @@ static void CTRLUpdateRelayOneShot(uint32_t index, uint32_t val)
 
 static void CTRLUpdateRelayMasterOffReset(uint32_t index, uint32_t val)
 {
-
+    if (val) {
+        g_CTRTargetRelaysTable[index].CTRLVal = 0;
+    }
 }
 
 static void CTRLUpdateRelayHotCup(uint32_t index, uint32_t val)
@@ -611,7 +622,9 @@ static void CTRLUpdateStatusOneShot(uint32_t index, uint32_t val)
 
 static void CTRLUpdateStatusMasterOffReset(uint32_t index, uint32_t val)
 {
-
+    if (val){
+        g_CTRTargetStatusOutpusTable[index].CTRLVal = 0;
+    }
 }
 
 static void CTRLUpdateStatusHotCup(uint32_t index, uint32_t val)
