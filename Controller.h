@@ -27,6 +27,10 @@
 #define CTRL_FNCT_HOTCUP            9
 #define CTRL_FNCT_SET_PRIORITY      10
 
+#define CTRL_ONESHOT_IDLE           0
+#define CTRL_ONESHOT_WAIT           1
+
+
 #define CTRL_BOARD_SW1              0
 #define CTRL_BOARD_SW2              1
 #define CTRL_MKII_S1                3
@@ -63,7 +67,9 @@ typedef struct ctrl_cfg {
 typedef struct ctrl_do {
     const uint32_t      CTRLDout;
     uint32_t            CTRLVal;
+    uint32_t            CTRLCtr;                 /* One shot counter */
     uint8_t             CTRLPriority;
+    uint8_t             CTRLState;              /*  */
 }CTRL_DO;
 
 
